@@ -61,14 +61,16 @@ exports.submitDoubt = async (req, res) => {
     emitNotification(mentorId.toString(), notification);
 
     // ✅ SEND EMAIL TO MENTOR
-    await emailService.sendDoubtAssigned(doubt, mentor);
-    console.log('📧 Email sent to mentor:', mentor.email);
+   // ✅ SEND RESPONSE FIRST
+res.status(201).json({
+  success: true,
+  data: doubt
+});
 
-    res.status(201).json({
-      success: true,
-      data: doubt
-    });
-  } catch (error) {
+// ✅ THEN EMAIL IN BACKGROUND
+emailService.sendDoubtAssigned(doubt, mentor)
+  .then(() => console.log('📧 Email sent to mentor:', mentor.email))
+  .catch(err => console.error('📧 Email failed:', err.message));  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
