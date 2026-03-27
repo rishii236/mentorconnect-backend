@@ -1,27 +1,6 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// ================== TRANSPORTER ==================
-const createTransporter = () => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-    console.log('⚠️ Email not configured');
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,  // ✅ true for port 465
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
-};
-    tls: {
-      rejectUnauthorized: false // remove in production
-    }
-  
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ================== EMAIL TEMPLATES ==================
 const emailTemplates = {
@@ -35,7 +14,6 @@ const emailTemplates = {
         <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #333;">Hi ${data.studentName},</h2>
           <p style="color: #666; font-size: 16px;">Your appointment has been successfully booked!</p>
-          
           <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #667eea; margin-top: 0;">Appointment Details</h3>
             <p style="margin: 10px 0;"><strong>Mentor:</strong> ${data.mentorName}</p>
@@ -44,11 +22,8 @@ const emailTemplates = {
             <p style="margin: 10px 0;"><strong>Time:</strong> ${data.time}</p>
             ${data.meetLink ? `<p style="margin: 10px 0;"><strong>Meeting Link:</strong> <a href="${data.meetLink}" style="color: #667eea;">${data.meetLink}</a></p>` : ''}
           </div>
-          
           ${data.notes ? `<p style="color: #666;"><strong>Notes:</strong> ${data.notes}</p>` : ''}
-          
           <p style="color: #666;">Make sure to join on time. Good luck with your session!</p>
-          
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="color: #999; font-size: 14px;">MentorConnect - Connecting Students with Mentors</p>
           </div>
@@ -67,16 +42,13 @@ const emailTemplates = {
         <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #333;">Hi ${data.name},</h2>
           <p style="color: #666; font-size: 16px;">This is a friendly reminder about your upcoming appointment!</p>
-          
           <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
             <h3 style="color: #92400e; margin-top: 0;">⏰ Your appointment is in 1 hour!</h3>
             <p style="margin: 10px 0;"><strong>With:</strong> ${data.mentorName}</p>
             <p style="margin: 10px 0;"><strong>Time:</strong> ${data.time}</p>
             ${data.meetLink ? `<p style="margin: 10px 0;"><strong>Meeting Link:</strong> <a href="${data.meetLink}" style="color: #92400e;">${data.meetLink}</a></p>` : ''}
           </div>
-          
           <p style="color: #666;">Please make sure you're ready and have all necessary materials prepared.</p>
-          
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="color: #999; font-size: 14px;">MentorConnect - Connecting Students with Mentors</p>
           </div>
@@ -95,7 +67,6 @@ const emailTemplates = {
         <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #333;">Hi ${data.mentorName},</h2>
           <p style="color: #666; font-size: 16px;">A new doubt has been assigned to you!</p>
-          
           <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #10b981; margin-top: 0;">Doubt Details</h3>
             <p style="margin: 10px 0;"><strong>Student:</strong> ${data.studentName}</p>
@@ -103,28 +74,15 @@ const emailTemplates = {
             <p style="margin: 10px 0;"><strong>Class:</strong> ${data.studentClass}</p>
             <p style="margin: 10px 0;"><strong>Question:</strong> ${data.remarks}</p>
           </div>
-          
           ${data.meetLink ? `
-            <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
-              <h3 style="color: white; margin: 0 0 15px 0; font-size: 20px;">📞 Join Google Meet</h3>
-              <p style="color: #e0f2fe; margin: 0 0 20px 0; font-size: 14px;">Click the button below to join the meeting with the student</p>
-              <a href="${data.meetLink}" 
-                 style="background: white; color: #2563eb; padding: 15px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                🎥 Join Meeting Now
-              </a>
-              <p style="color: #bfdbfe; margin: 15px 0 0 0; font-size: 12px;">Meeting Link: ${data.meetLink}</p>
+            <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center;">
+              <h3 style="color: white; margin: 0 0 15px 0;">📞 Join Google Meet</h3>
+              <a href="${data.meetLink}" style="background: white; color: #2563eb; padding: 15px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">🎥 Join Meeting Now</a>
             </div>
           ` : ''}
-          
-          <p style="color: #666; margin-top: 25px;">Please review and respond to the doubt at your earliest convenience.</p>
-          
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL}/mentor-dashboard" 
-               style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">
-              📋 View in Dashboard
-            </a>
+            <a href="${process.env.FRONTEND_URL}/mentor-dashboard" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">📋 View in Dashboard</a>
           </div>
-          
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="color: #999; font-size: 14px;">MentorConnect - Connecting Students with Mentors</p>
           </div>
@@ -143,18 +101,10 @@ const emailTemplates = {
         <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #333;">Hi ${data.studentName},</h2>
           <p style="color: #666; font-size: 16px;">Great news! Your doubt has been resolved by ${data.mentorName}.</p>
-          
           <div style="background: #dbeafe; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1e40af; margin-top: 0;">📚 Subject: ${data.subject}</h3>
             ${data.response ? `<p style="color: #374151;"><strong>Mentor's Response:</strong><br/>${data.response}</p>` : ''}
           </div>
-          
-          <p style="color: #666;">We'd love to hear your feedback about this session!</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL}/feedback/${data.doubtId}" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">Give Feedback</a>
-          </div>
-          
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="color: #999; font-size: 14px;">MentorConnect - Connecting Students with Mentors</p>
           </div>
@@ -173,15 +123,12 @@ const emailTemplates = {
         <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px;">
           <h2 style="color: #333;">Hi ${data.mentorName},</h2>
           <p style="color: #666; font-size: 16px;">You've received new feedback from ${data.studentName}!</p>
-          
           <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #92400e; margin-top: 0;">Rating: ${'⭐'.repeat(data.rating)}</h3>
             ${data.comment ? `<p style="color: #374151;">"${data.comment}"</p>` : ''}
             ${data.tags && data.tags.length > 0 ? `<p style="color: #78716c;"><strong>Tags:</strong> ${data.tags.join(', ')}</p>` : ''}
           </div>
-          
           <p style="color: #666;">Keep up the great work!</p>
-          
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="color: #999; font-size: 14px;">MentorConnect - Connecting Students with Mentors</p>
           </div>
@@ -194,35 +141,23 @@ const emailTemplates = {
 // ================== SEND EMAIL ==================
 const sendEmail = async (to, template, data) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.log('📧 Skipping email (not configured)');
-      return { success: false, message: 'Email service not configured' };
-    }
-
-    const transporter = createTransporter();
-    if (!transporter) return { success: false, message: 'Failed to create transporter' };
-
     const emailContent = emailTemplates[template](data);
-
-    const info = await transporter.sendMail({
-      from: `"MentorConnect" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+      from: 'MentorConnect <onboarding@resend.dev>',
       to,
       subject: emailContent.subject,
       html: emailContent.html
     });
-
-    console.log('✅ Email sent:', info.messageId);
-    return { success: true, messageId: info.messageId };
-
+    console.log('✅ Email sent to:', to);
+    return { success: true };
   } catch (err) {
     console.error('❌ Email error:', err.message);
-    return { success: false, error: err.message };
+    return { success: false };
   }
 };
 
 // ================== SERVICE FUNCTIONS ==================
 const emailService = {
-
   sendAppointmentConfirmation: async (appointment, student, mentor) => {
     const date = new Date(appointment.appointmentDate);
     return await sendEmail(student.email, 'appointmentBooked', {
