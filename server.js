@@ -30,18 +30,21 @@ app.set('io', io);
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// CORS middleware
+// CORS first - before everything else
 app.use(cors({
   origin: [
     'https://mentorconnect-blond.vercel.app',
-    'http://localhost:5173'  // keep this for local dev
+    'http://localhost:5173'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.options('*', cors());
+
+// THEN body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads', 'doubts');
 if (!fs.existsSync(uploadsDir)) {
