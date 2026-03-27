@@ -203,15 +203,18 @@ exports.updateDoubtStatus = async (req, res) => {
     emitNotification(doubt.student.toString(), notification);
 
     // ✅ SEND EMAIL TO STUDENT IF RESOLVED
-    if (status === 'resolved') {
-      await emailService.sendDoubtResolved(doubt, student, mentor);
-      console.log('📧 Doubt resolved email sent to student:', student.email);
-    }
+   // ✅ RESPONSE FIRST
+res.json({
+  success: true,
+  data: doubt
+});
 
-    res.json({
-      success: true,
-      data: doubt
-    });
+// ✅ EMAIL IN BACKGROUND
+if (status === 'resolved') {
+  emailService.sendDoubtResolved(doubt, student, mentor)
+    .then(() => console.log('📧 Doubt resolved email sent to student:', student.email))
+    .catch(err => console.error('📧 Email failed:', err.message));
+};
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
